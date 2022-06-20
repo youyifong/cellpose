@@ -115,6 +115,7 @@ def main():
     training_args.add_argument('--save_every',
                         default=100, type=int, help='number of epochs to skip between saves. Default: %(default)s')
     training_args.add_argument('--save_each', action='store_true', help='save the model under a different filename per --save_every epoch for later comparsion')
+    training_args.add_argument('--train_seed', default=0, type=int, help='random seed. Default: %(default)s')
     
     # misc settings
     parser.add_argument('--verbose', action='store_true', help='show information about running and settings and save to log')
@@ -318,7 +319,8 @@ def main():
                                            save_each=args.save_each,
                                            n_epochs=args.n_epochs,
                                            batch_size=args.batch_size, 
-                                           min_train_masks=args.min_train_masks)
+                                           min_train_masks=args.min_train_masks,
+                                           train_seed=args.train_seed)
                 model.pretrained_model = cpmodel_path
                 logger.info('>>>> model trained and saved to %s'%cpmodel_path)
 
