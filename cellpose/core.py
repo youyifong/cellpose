@@ -630,7 +630,7 @@ class UnetModel():
               test_data=None, test_labels=None, test_files=None,
               channels=None, normalize=True, save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, batch_size=8, 
-              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None):
+              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0):
         """ train function uses 0-1 mask label and boundary pixels for training """
 
         nimg = len(train_data)
@@ -677,7 +677,7 @@ class UnetModel():
                                     save_path=save_path, save_every=save_every, save_each=save_each,
                                     learning_rate=learning_rate, n_epochs=n_epochs, momentum=momentum, 
                                     weight_decay=weight_decay, SGD=True, batch_size=batch_size, 
-                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name)
+                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name, train_seed=train_seed)
 
         # find threshold using validation set
         core_logger.info('>>>> finding best thresholds using validation set')
@@ -769,7 +769,7 @@ class UnetModel():
               test_data=None, test_labels=None,
               save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, 
-              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None): 
+              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None, train_seed=0): 
         """ train function uses loss function self.loss_fn in models.py"""
         
         d = datetime.datetime.now()
@@ -851,7 +851,8 @@ class UnetModel():
 
         # get indices for each epoch for training
         np.random.seed(0)
-        seed=0
+        #seed=0
+        seed=train_seed
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -938,5 +939,3 @@ class UnetModel():
         # reset to mkldnn if available
         self.net.mkldnn = self.mkldnn
         return file_name
-
-    # test by sunwoo
