@@ -8,6 +8,7 @@ import cv2
 from scipy.stats import mode
 import fastremap
 from . import transforms, dynamics, utils, plot, metrics
+import random
 
 import torch
 #     from GPUtil import showUtilization as gpu_usage #for gpu memory debugging 
