@@ -691,7 +691,7 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224),
         scale: array, float
             amount each image was resized by
     """
-    scale_range = max(0, min(2, float(scale_range)))
+    scale_range = max(0, min(2, float(scale_range))) # scale_range is from 0 (min) to 2 (max)
     nimg = len(X)
     if X[0].ndim>2:
         nchan = X[0].shape[0]
@@ -716,7 +716,7 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224),
             # generate random augmentation parameters
             flip = np.random.rand()>.5
             theta = np.random.rand() * np.pi * 2
-            scale[n] = (1-scale_range/2) + scale_range * np.random.rand()
+            scale[n] = (1-scale_range/2) + scale_range * np.random.rand() # scale is from 0 (min) to 2 (max), if rescale is None
             if rescale is not None:
                 scale[n] *= 1. / rescale[n]
             dxy = np.maximum(0, np.array([Lx*scale[n]-xy[1],Ly*scale[n]-xy[0]]))
