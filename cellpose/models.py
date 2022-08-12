@@ -675,7 +675,8 @@ class CellposeModel(UnetModel):
               weight_decay=0.00001, batch_size=8, nimg_per_epoch=None,
               rescale=True, min_train_masks=5,
               model_name=None, 
-              train_seed=0):
+              train_seed=0,
+              patch_size=224):
 
         """ train network with images train_data 
         
@@ -772,7 +773,7 @@ class CellposeModel(UnetModel):
                                      learning_rate=learning_rate, n_epochs=n_epochs, 
                                      momentum=momentum, weight_decay=weight_decay, 
                                      SGD=SGD, batch_size=batch_size, nimg_per_epoch=nimg_per_epoch, 
-                                     rescale=rescale, model_name=model_name, train_seed=train_seed)
+                                     rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size)
         self.pretrained_model = model_path
         return model_path
 
