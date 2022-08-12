@@ -65,9 +65,9 @@ def _use_gpu_torch(gpu_number=0):
         core_logger.info('TORCH CUDA version not installed/working.')
         return False
 
-def assign_device(use_torch=True, gpu=False):
+def assign_device(use_torch=True, gpu=False, cuda_id=0):
     if gpu and use_gpu(use_torch=True):
-        device = torch_GPU
+        device = torch.device('cuda:'+str(cuda_id))
         gpu=True
         core_logger.info('>>>> using GPU')
     else:

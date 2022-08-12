@@ -21,6 +21,7 @@ except Exception as err:
     
 import logging
 
+
 # settings re-grouped a bit
 def main():
     parser = argparse.ArgumentParser(description='cellpose parameters')
@@ -117,6 +118,7 @@ def main():
     training_args.add_argument('--save_each', action='store_true', help='save the model under a different filename per --save_every epoch for later comparsion')
     training_args.add_argument('--train_seed', default=0, type=int, help='random seed. Default: %(default)s')
     training_args.add_argument('--patch_size', default=448, type=int, help='patch size. Default: %(default)s')
+    training_args.add_argument('--cuda_id', default=0, type=int, help='cuda gpu id. Default: %(default)s')
     
     # misc settings
     parser.add_argument('--verbose', action='store_true', help='show information about running and settings and save to log')
@@ -160,7 +162,7 @@ def main():
         if not (args.train or args.train_size):
             saving_something = args.save_png or args.save_tif or args.save_flows or args.save_ncolor or args.save_txt
                     
-        device, gpu = models.assign_device(use_torch=True, gpu=args.use_gpu)
+        device, gpu = models.assign_device(use_torch=True, gpu=args.use_gpu, cuda_id=args.cuda_id)
 
         #define available model names, right now we have three broad categories 
         builtin_model = np.any([args.pretrained_model==s for s in models.MODEL_NAMES])
