@@ -658,7 +658,7 @@ def _image_resizer(img, resize=512, to_uint8=False):
 
 
 def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224), 
-                             do_flip=True, rescale=None, unet=False, random_per_image=True):
+                             do_flip=False, rescale=None, unet=False, random_per_image=True):
     """ augmentation by random rotation and resizing
         X and Y are lists or arrays of length nimg, with dims channels x Ly x Lx (channels optional)
         Parameters
@@ -715,7 +715,7 @@ def random_rotate_and_resize(X, Y=None, scale_range=1., xy = (224,224),
         if random_per_image or n==0:
             # generate random augmentation parameters
             flip = np.random.rand()>.5
-            theta = np.random.rand() * np.pi * 2
+            theta = 0 # np.random.rand() * np.pi * 2
             scale[n] = (1-scale_range/2) + scale_range * np.random.rand() # scale is from 0 (min) to 2 (max), if rescale is None
             if rescale is not None:
                 scale[n] *= 1. / rescale[n]
