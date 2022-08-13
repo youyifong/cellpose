@@ -324,7 +324,8 @@ def main():
                                            batch_size=args.batch_size, 
                                            min_train_masks=args.min_train_masks,
                                            train_seed=args.train_seed,
-                                           patch_size=args.patch_size)
+                                           patch_size=args.patch_size,
+                                           cuda_id=args.cuda_id)
                 model.pretrained_model = cpmodel_path
                 logger.info('>>>> model trained and saved to %s'%cpmodel_path)
 

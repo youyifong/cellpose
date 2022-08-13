@@ -631,7 +631,7 @@ class UnetModel():
               test_data=None, test_labels=None, test_files=None,
               channels=None, normalize=True, save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, batch_size=8, 
-              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224):
+              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224, cuda_id=0):
         """ train function uses 0-1 mask label and boundary pixels for training """
 
         nimg = len(train_data)
@@ -678,7 +678,7 @@ class UnetModel():
                                     save_path=save_path, save_every=save_every, save_each=save_each,
                                     learning_rate=learning_rate, n_epochs=n_epochs, momentum=momentum, 
                                     weight_decay=weight_decay, SGD=True, batch_size=batch_size, 
-                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size)
+                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size, cuda_id=cuda_id)
 
         # find threshold using validation set
         core_logger.info('>>>> finding best thresholds using validation set')
@@ -770,7 +770,7 @@ class UnetModel():
               test_data=None, test_labels=None,
               save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, 
-              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None, train_seed=0, patch_size=224): 
+              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None, train_seed=0, patch_size=224, cuda_id=0): 
         """ train function uses loss function self.loss_fn in models.py"""
         
         d = datetime.datetime.now()
@@ -837,7 +837,7 @@ class UnetModel():
 
         if save_path is not None:
             _, file_label = os.path.split(save_path)
-            file_path = os.path.join(save_path, 'models/')
+            file_path = os.path.join(save_path, 'models'+str(cuda_id)+'/')
 
             if not os.path.exists(file_path):
                 os.makedirs(file_path)
