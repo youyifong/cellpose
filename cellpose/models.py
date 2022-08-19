@@ -677,7 +677,8 @@ class CellposeModel(UnetModel):
               model_name=None, 
               train_seed=0,
               patch_size=224,
-              cuda_id=0):
+              cuda_id=0,
+              do_rotate=True):
 
         """ train network with images train_data 
         
@@ -774,7 +775,7 @@ class CellposeModel(UnetModel):
                                      learning_rate=learning_rate, n_epochs=n_epochs, 
                                      momentum=momentum, weight_decay=weight_decay, 
                                      SGD=SGD, batch_size=batch_size, nimg_per_epoch=nimg_per_epoch, 
-                                     rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size, cuda_id=cuda_id)
+                                     rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size, cuda_id=cuda_id, do_rotate=do_rotate)
         self.pretrained_model = model_path
         return model_path
 

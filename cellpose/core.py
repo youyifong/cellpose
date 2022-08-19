@@ -631,7 +631,7 @@ class UnetModel():
               test_data=None, test_labels=None, test_files=None,
               channels=None, normalize=True, save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, batch_size=8, 
-              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224, cuda_id=0):
+              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224, cuda_id=0, do_rotate=do_rotate):
         """ train function uses 0-1 mask label and boundary pixels for training """
 
         nimg = len(train_data)
@@ -678,7 +678,7 @@ class UnetModel():
                                     save_path=save_path, save_every=save_every, save_each=save_each,
                                     learning_rate=learning_rate, n_epochs=n_epochs, momentum=momentum, 
                                     weight_decay=weight_decay, SGD=True, batch_size=batch_size, 
-                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size, cuda_id=cuda_id)
+                                    nimg_per_epoch=nimg_per_epoch, rescale=rescale, model_name=model_name, train_seed=train_seed, patch_size=patch_size, cuda_id=cuda_id, do_rotate=do_rotate)
 
         # find threshold using validation set
         core_logger.info('>>>> finding best thresholds using validation set')
@@ -881,7 +881,7 @@ class UnetModel():
                 # now passing in the full train array, need the labels for distance field
                 imgi, lbl, scale = transforms.random_rotate_and_resize(
                                         [train_data[i] for i in inds], Y=[train_labels[i][1:] for i in inds],
-                                        rescale=rsc, scale_range=scale_range, unet=self.unet, xy=(patch_size, patch_size))
+                                        rescale=rsc, scale_range=scale_range, unet=self.unet, xy=(patch_size, patch_size), do_rotate=do_rotate)
                 if self.unet and lbl.shape[1]>1 and rescale:
                     lbl[:,1] *= scale[:,np.newaxis,np.newaxis]**2#diam_batch[:,np.newaxis,np.newaxis]**2
                 train_loss = self._train_step(imgi, lbl)
@@ -899,7 +899,7 @@ class UnetModel():
                         rsc = diam_test[inds] / self.diam_mean if rescale else np.ones(len(inds), np.float32)
                         imgi, lbl, scale = transforms.random_rotate_and_resize(
                                             [test_data[i] for i in inds], Y=[test_labels[i][1:] for i in inds], 
-                                            scale_range=0., rescale=rsc, unet=self.unet, xy=(patch_size, patch_size)) 
+                                            scale_range=0., rescale=rsc, unet=self.unet, xy=(patch_size, patch_size), do_rotate=do_rotate) 
                         if self.unet and lbl.shape[1]>1 and rescale:
                             lbl[:,1] *= scale[:,np.newaxis,np.newaxis]**2
 
