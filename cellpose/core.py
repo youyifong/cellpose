@@ -631,7 +631,7 @@ class UnetModel():
               test_data=None, test_labels=None, test_files=None,
               channels=None, normalize=True, save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, batch_size=8, 
-              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224, cuda_id=0, do_rotate=do_rotate):
+              nimg_per_epoch=None, min_train_masks=5, rescale=False, model_name=None, train_seed=0, patch_size=224, cuda_id=0, do_rotate=True):
         """ train function uses 0-1 mask label and boundary pixels for training """
 
         nimg = len(train_data)
@@ -770,7 +770,7 @@ class UnetModel():
               test_data=None, test_labels=None,
               save_path=None, save_every=100, save_each=False,
               learning_rate=0.2, n_epochs=500, momentum=0.9, weight_decay=0.00001, 
-              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None, train_seed=0, patch_size=224, cuda_id=0): 
+              SGD=True, batch_size=8, nimg_per_epoch=None, rescale=True, model_name=None, train_seed=0, patch_size=224, cuda_id=0, do_rotate=True): 
         """ train function uses loss function self.loss_fn in models.py"""
         
         d = datetime.datetime.now()
