@@ -256,6 +256,8 @@ def main():
                     szmean = 30.
                 elif nuclear:
                     szmean = 17.
+                elif args.pretrained_model=='tissuenet' or args.pretrained_model=='livecell':
+                    szmean = 30.
             else:
                 cpmodel_path = os.fspath(args.pretrained_model)
             
