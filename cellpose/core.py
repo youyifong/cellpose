@@ -16,8 +16,6 @@ from torch import nn
 from torch.utils import mkldnn as mkldnn_utils
 from . import resnet_torch
 TORCH_ENABLED = True
-torch_GPU = torch.device('cuda')
-torch_CPU = torch.device('cpu')
 
 core_logger = logging.getLogger(__name__)
 tqdm_out = utils.TqdmToLogger(core_logger, level=logging.INFO)
@@ -65,13 +63,13 @@ def _use_gpu_torch(gpu_number=0):
         core_logger.info('TORCH CUDA version not installed/working.')
         return False
 
-def assign_device(use_torch=True, gpu=False, cuda_id=0):
+def assign_device(use_torch=True, gpu=False, device=0):
     if gpu and use_gpu(use_torch=True):
-        device = torch.device('cuda:'+str(cuda_id))
+        device = torch.device(f'cuda:{device}')
         gpu=True
         core_logger.info('>>>> using GPU')
     else:
-        device = torch_CPU
+        device = torch.device('cpu')
         core_logger.info('>>>> using CPU')
         gpu=False
     return device, gpu
@@ -298,6 +296,7 @@ class UnetModel():
             self.net = mkldnn_utils.to_mkldnn(self.net)
         with torch.no_grad():
             y, style = self.net(X)
+        del X
         y = self._from_device(y)
         style = self._from_device(style)
         if return_conv:
@@ -727,6 +726,7 @@ class UnetModel():
         #else:
         self.net.train()
         y = self.net(X)[0]
+        del X
         loss = self.loss_fn(lbl,y)
         loss.backward()
         train_loss = loss.item()
@@ -739,6 +739,7 @@ class UnetModel():
         self.net.eval()
         with torch.no_grad():
             y, style = self.net(X)
+            del X
             loss = self.loss_fn(lbl,y)
             test_loss = loss.item()
             test_loss *= len(x)

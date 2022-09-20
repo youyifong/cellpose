@@ -25,16 +25,19 @@ import logging
 # settings re-grouped a bit
 def main():
     parser = argparse.ArgumentParser(description='cellpose parameters')
-    
+
     # settings for CPU vs GPU
     hardware_args = parser.add_argument_group("hardware arguments")
     hardware_args.add_argument('--use_gpu', action='store_true', help='use gpu if torch with cuda installed')
+    hardware_args.add_argument('--gpu_device', required=False, default=0, type=int, help='which gpu device to use')
     hardware_args.add_argument('--check_mkl', action='store_true', help='check if mkl working')
         
     # settings for locating and formatting images
     input_img_args = parser.add_argument_group("input image arguments")
     input_img_args.add_argument('--dir',
                         default=[], type=str, help='folder containing data to run or train on.')
+    input_img_args.add_argument('--image_path',
+                        default=[], type=str, help='if given and --dir not given, run on single image instead of folder (cannot train with this option)')
     input_img_args.add_argument('--look_one_level_down', action='store_true', help='run processing on all subdirectories of current folder')
     input_img_args.add_argument('--img_filter',
                         default=[], type=str, help='end string for images to run on')
@@ -52,6 +55,7 @@ def main():
     # model settings 
     model_args = parser.add_argument_group("model arguments")
     model_args.add_argument('--pretrained_model', required=False, default='cyto', type=str, help='model to use for running or starting training')
+    model_args.add_argument('--add_model', required=False, default=None, type=str, help='model path to copy model to hidden .cellpose folder for using in GUI/CLI')
     model_args.add_argument('--unet', action='store_true', help='run standard unet instead of cellpose flow output')
     model_args.add_argument('--nclasses',default=3, type=int, help='if running unet, choose 2 or 3; cellpose always uses 3')
 
@@ -60,6 +64,7 @@ def main():
     algorithm_args.add_argument('--no_resample', action='store_true', help="disable dynamics on full image (makes algorithm faster for images with large diameters)")
     algorithm_args.add_argument('--net_avg', action='store_true', help='run 4 networks instead of 1 and average results')
     algorithm_args.add_argument('--no_interp', action='store_true', help='do not interpolate when running dynamics (was default)')
+    algorithm_args.add_argument('--no_norm', action='store_true', help='do not normalize images (normalize=False)')
     algorithm_args.add_argument('--do_3D', action='store_true', help='process images as 3D stacks of images (nplanes x nchan x Ly x Lx')
     algorithm_args.add_argument('--diameter', required=False, default=30., type=float, 
                         help='cell diameter, if 0 will use the diameter of the training labels used in the model, or with built-in model will estimate diameter for each image')
@@ -94,7 +99,7 @@ def main():
     training_args.add_argument('--test_dir',
                         default=[], type=str, help='folder containing test data (optional)')
     training_args.add_argument('--mask_filter',
-                        default='_masks', type=str, help='end string for masks to run on. Default: %(default)s')
+                        default='_masks', type=str, help='end string for masks to run on. use "_seg.npy" for manual annotations from the GUI. Default: %(default)s')
     training_args.add_argument('--diam_mean',
                         default=30., type=float, help='mean diameter to resize cells to during training -- if starting from pretrained models it cannot be changed from 30.0')
     training_args.add_argument('--learning_rate',
@@ -132,14 +137,17 @@ def main():
     else:
         mkl_enabled = True
     
-    if len(args.dir)==0:
-        if not GUI_ENABLED:
-            print('GUI ERROR: %s'%GUI_ERROR)
-            if GUI_IMPORT:
-                print('GUI FAILED: GUI dependencies may not be installed, to install, run')
-                print('     pip install cellpose[gui]')
+    if len(args.dir)==0 and len(args.image_path)==0:
+        if args.add_model:
+            io.add_model(args.add_model)
         else:
-            gui.run()
+            if not GUI_ENABLED:
+                print('GUI ERROR: %s'%GUI_ERROR)
+                if GUI_IMPORT:
+                    print('GUI FAILED: GUI dependencies may not be installed, to install, run')
+                    print('     pip install cellpose[gui]')
+            else:
+                gui.run()
 
     else:
         if args.verbose:
@@ -164,25 +172,44 @@ def main():
         if not (args.train or args.train_size):
             saving_something = args.save_png or args.save_tif or args.save_flows or args.save_ncolor or args.save_txt
                     
-        device, gpu = models.assign_device(use_torch=True, gpu=args.use_gpu, cuda_id=args.cuda_id)
+        device, gpu = models.assign_device(use_torch=True, gpu=args.use_gpu, device=args.gpu_device)
 
-        #define available model names, right now we have three broad categories 
-        builtin_model = np.any([args.pretrained_model==s for s in models.MODEL_NAMES])
-        cytoplasmic = 'cyto' in args.pretrained_model
-        nuclear = 'nuclei' in args.pretrained_model
+        if args.pretrained_model is None or args.pretrained_model == 'None' or args.pretrained_model == 'False' or args.pretrained_model == '0':
+            pretrained_model = False
+        else:
+            pretrained_model = args.pretrained_model
         
+        model_type = None
+        if pretrained_model and not os.path.exists(pretrained_model):
+            model_type = pretrained_model if pretrained_model is not None else 'cyto'
+            model_strings = models.get_user_models()
+            all_models = models.MODEL_NAMES.copy() 
+            all_models.extend(model_strings)
+            if ~np.any([model_type == s for s in all_models]):
+                model_type = 'cyto'
+                logger.warning('pretrained model has incorrect path')
+
+            if model_type=='nuclei':
+                szmean = 17. 
+            else:
+                szmean = 30.
+        builtin_size = model_type == 'cyto' or model_type == 'cyto2' or model_type == 'nuclei'
+        
+        if len(args.image_path) > 0 and (args.train or args.train_size):
+            raise ValueError('ERROR: cannot train model with single image input')
+
         if not args.train and not args.train_size:
             tic = time.time()
-            if not builtin_model:
-                cpmodel_path = args.pretrained_model
-                if not os.path.exists(cpmodel_path):
-                    logger.warning('model path does not exist, using cyto model')
-                    args.pretrained_model = 'cyto'
-
-            image_names = io.get_image_files(args.dir, 
-                                             args.mask_filter, 
-                                             imf=imf,
-                                             look_one_level_down=args.look_one_level_down)
+            if len(args.dir) > 0:
+                image_names = io.get_image_files(args.dir, 
+                                                args.mask_filter, 
+                                                imf=imf,
+                                                look_one_level_down=args.look_one_level_down)
+            else:
+                if os.path.exists(args.image_path):
+                    image_names = [args.image_path]
+                else:
+                    raise ValueError(f'ERROR: no file found at {args.image_path}')
             nimg = len(image_names)
                 
             cstr0 = ['GRAY', 'RED', 'GREEN', 'BLUE']
@@ -191,24 +218,26 @@ def main():
                             (nimg, cstr0[channels[0]], cstr1[channels[1]]))
              
             # handle built-in model exceptions; bacterial ones get no size model 
-            if builtin_model:
-                model = models.Cellpose(gpu=gpu, device=device, model_type=args.pretrained_model, 
+            if builtin_size:
+                model = models.Cellpose(gpu=gpu, device=device, model_type=model_type, 
                                                 net_avg=(not args.fast_mode or args.net_avg))
                 
             else:
                 if args.all_channels:
                     channels = None  
+                pretrained_model = None if model_type is not None else pretrained_model
                 model = models.CellposeModel(gpu=gpu, device=device, 
-                                             pretrained_model=cpmodel_path,
+                                             pretrained_model=pretrained_model,
+                                             model_type=model_type,
                                              net_avg=False)
             
             # handle diameters
             if args.diameter==0:
-                if builtin_model:
+                if builtin_size:
                     diameter = None
                     logger.info('>>>> estimating diameter for each image')
                 else:
-                    logger.info('>>>> not using cyto or nuclei model, cannot auto-estimate diameter')
+                    logger.info('>>>> not using cyto, cyto2, or nuclei model, cannot auto-estimate diameter')
                     diameter = model.diam_labels
                     logger.info('>>>> using diameter %0.3f for all images'%diameter)
             else:
@@ -230,6 +259,7 @@ def main():
                                 invert=args.invert,
                                 batch_size=args.batch_size,
                                 interp=(not args.no_interp),
+                                normalize=(not args.no_norm),
                                 channel_axis=args.channel_axis,
                                 z_axis=args.z_axis,
                                 anisotropy=args.anisotropy,
@@ -250,16 +280,6 @@ def main():
                                   save_txt=args.save_txt,in_folders=args.in_folders)
             logger.info('>>>> completed in %0.3f sec'%(time.time()-tic))
         else:
-            if builtin_model:
-                cpmodel_path = models.model_path(args.pretrained_model, 0)
-                if cytoplasmic:
-                    szmean = 30.
-                elif nuclear:
-                    szmean = 17.
-                elif args.pretrained_model=='tissuenet' or args.pretrained_model=='livecell':
-                    szmean = 30.
-            else:
-                cpmodel_path = os.fspath(args.pretrained_model)
             
             test_dir = None if len(args.test_dir)==0 else args.test_dir
             output = io.load_train_test_data(args.dir, test_dir, imf, args.mask_filter, args.unet, args.look_one_level_down)
@@ -278,28 +298,22 @@ def main():
 
             
             # model path
-            if not os.path.exists(cpmodel_path):
+            szmean = args.diam_mean
+            if not os.path.exists(pretrained_model) and model_type is None:
                 if not args.train:
                     error_message = 'ERROR: model path missing or incorrect - cannot train size model'
                     logger.critical(error_message)
                     raise ValueError(error_message)
-                cpmodel_path = False
+                pretrained_model = False
                 logger.info('>>>> training from scratch')
-                
-                szmean = args.diam_mean
-            else:
-                args.diam_mean = szmean 
-                logger.info('>>>> pretrained model %s is being used'%cpmodel_path)
-                args.residual_on = 1
-                args.style_on = 1
-                args.concatenation = 0
+            
             if args.train:
                 logger.info('>>>> during training rescaling images to fixed diameter of %0.1f pixels'%args.diam_mean)
                 
             # initialize model
             if args.unet:
                 model = core.UnetModel(device=device,
-                                        pretrained_model=cpmodel_path, 
+                                        pretrained_model=pretrained_model, 
                                         diam_mean=szmean,
                                         residual_on=args.residual_on,
                                         style_on=args.style_on,
@@ -308,7 +322,8 @@ def main():
                                         nchan=nchan)
             else:
                 model = models.CellposeModel(device=device,
-                                            pretrained_model=cpmodel_path, 
+                                            pretrained_model=pretrained_model if model_type is None else None,
+                                            model_type=model_type, 
                                             diam_mean=szmean,
                                             residual_on=args.residual_on,
                                             style_on=args.style_on,

@@ -36,12 +36,15 @@ class ModelButton(QPushButton):
         self.model_name = model_name
         
     def press(self, parent):
+        for i in range(len(parent.StyleButtons)):
+            parent.StyleButtons[i].setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
         parent.compute_model(self.model_name)
 
 class TrainWindow(QDialog):
     def __init__(self, parent, model_strings):
         super().__init__(parent)
-        self.setGeometry(100,100,600,300)
+        self.setGeometry(100,100,900,350)
         self.setWindowTitle('train settings')
         self.win = QWidget(self)
         self.l0 = QGridLayout()
@@ -85,16 +88,17 @@ class TrainWindow(QDialog):
             self.l0.addWidget(qlabel, i+yoff,0,1,1)
             self.edits.append(QLineEdit())
             self.edits[-1].setText(str(parent.training_params[label]))
+            self.edits[-1].setFixedWidth(200)
             self.l0.addWidget(self.edits[-1], i+yoff, 1,1,1)
 
         yoff+=len(labels)
 
         yoff+=1
-        qlabel = QLabel('(to remove files, click cancel then remove from folder and reopen train window)')
-        self.l0.addWidget(qlabel, yoff,0,1,4)
+        qlabel = QLabel('(to remove files, click cancel then remove \nfrom folder and reopen train window)')
+        self.l0.addWidget(qlabel, yoff,0,2,4)
 
         # click button
-        yoff+=1
+        yoff+=2
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(lambda: self.accept(parent))
@@ -256,7 +260,7 @@ class ExampleGUI(QDialog):
 class HelpWindow(QDialog):
     def __init__(self, parent=None):
         super(HelpWindow, self).__init__(parent)
-        self.setGeometry(100,100,700,800)
+        self.setGeometry(100,50,700,850)
         self.setWindowTitle('cellpose help')
         self.win = QWidget(self)
         layout = QGridLayout()
@@ -278,6 +282,8 @@ class HelpWindow(QDialog):
             <p class="has-line-data" data-line-start="17" data-line-end="18">!NOTE!: The GUI automatically saves after you draw a mask in 2D but NOT after 3D mask drawing and NOT after segmentation. Save in the file menu or with Ctrl+S. The output file is in the same folder as the loaded image with <code>_seg.npy</code> appended.</p>
             <table class="table table-striped table-bordered">
             <br><br>
+            FYI there are tooltips throughout the GUI (hover over text to see)
+            <br>
             <thead>
             <tr>
             <th>Keyboard shortcuts</th>
@@ -310,16 +316,16 @@ class HelpWindow(QDialog):
             <td>SAVE MASKS IN IMAGE to <code>_seg.npy</code> file</td>
             </tr>
             <tr>
+            <td>CTRL+T</td>
+            <td>train model using _seg.npy files in folder
+            </tr>
+            <tr>
             <td>CTRL+P</td>
             <td>load <code>_seg.npy</code> file (note: it will load automatically with image if it exists)</td>
             </tr>
             <tr>
             <td>CTRL+M</td>
             <td>load masks file (must be same size as image with 0 for NO mask, and 1,2,3… for masks)</td>
-            </tr>
-            <tr>
-            <td>CTRL+N</td>
-            <td>load numpy stack (NOT WORKING ATM)</td>
             </tr>
             <tr>
             <td>A/D or LEFT/RIGHT</td>
@@ -330,12 +336,12 @@ class HelpWindow(QDialog):
             <td>change color (RGB/gray/red/green/blue)</td>
             </tr>
             <tr>
-            <td>PAGE-UP / PAGE-DOWN</td>
-            <td>change to flows and cell prob views (if segmentation computed)</td>
+            <td>R / G / B </td>
+            <td>toggle between RGB and Red or Green or Blue</td>
             </tr>
             <tr>
-            <td>, / .</td>
-            <td>increase / decrease brush size for drawing masks</td>
+            <td>PAGE-UP / PAGE-DOWN</td>
+            <td>change to flows and cell prob views (if segmentation computed)</td>
             </tr>
             <tr>
             <td>X</td>
@@ -346,8 +352,8 @@ class HelpWindow(QDialog):
             <td>toggle outlines ON or OFF</td>
             </tr>
             <tr>
-            <td>C</td>
-            <td>cycle through labels for image type (saved to <code>_seg.npy</code>)</td>
+            <td>, / .</td>
+            <td>increase / decrease brush size for drawing masks</td>
             </tr>
             </tbody>
             </table>
@@ -363,6 +369,35 @@ class HelpWindow(QDialog):
         label.setWordWrap(True)
         layout.addWidget(label, 0, 0, 1, 1)
         self.show()
+
+
+class TrainHelpWindow(QDialog):
+    def __init__(self, parent=None):
+        super(TrainHelpWindow, self).__init__(parent)
+        self.setGeometry(100,50,700,300)
+        self.setWindowTitle('training instructions')
+        self.win = QWidget(self)
+        layout = QGridLayout()
+        self.win.setLayout(layout)
+        
+        text = ('''
+            Check out this <a href="https://youtu.be/3Y1VKcxjNy4">video</a> to learn the process.
+            <ol>
+                <li>Drag and drop an image from a folder of images with a similar style (like similar cell types).</li>
+                <li>Run the built-in models on one of the images using the "model zoo" and find the one that works best for your data. Make sure that if you have a nuclear channel you have selected it for CHAN2.</li>
+                <li>Fix the labelling by drawing new ROIs (right-click) and deleting incorrect ones (CTRL+click). The GUI autosaves any manual changes (but does not autosave after running the model, for that click CTRL+S). The segmentation is saved in a "_seg.npy" file.</li>
+                <li> Go to the "Models" menu in the File bar at the top and click "Train new model..." or use shortcut CTRL+T. </li>
+                <li> Choose the pretrained model to start the training from (the model you used in #2), and type in the model name that you want to use. The other parameters should work well in general for most data types. Then click OK. </li>
+                <li> The model will train (much faster if you have a GPU) and then auto-run on the next image in the folder. Next you can repeat #3-#5 as many times as is necessary. </li>
+                <li> The trained model is available to use in the future in the GUI in the "custom model" section and is saved in your image folder. </li>
+            </ol>
+            ''')
+        label = QLabel(text)
+        label.setFont(QtGui.QFont("Arial", 8))
+        label.setWordWrap(True)
+        layout.addWidget(label, 0, 0, 1, 1)
+        self.show()
+
 
 class TypeRadioButtons(QButtonGroup):
     def __init__(self, parent=None, row=0, col=0):
@@ -402,7 +437,7 @@ class RGBRadioButtons(QButtonGroup):
                 button.setChecked(True)
             self.addButton(button, b)
             button.toggled.connect(lambda: self.btnpress(parent))
-            self.parent.l0.addWidget(button, row+b,col,1,3)
+            self.parent.l0.addWidget(button, row,col+2*b,1,2)
         self.setExclusive(True)
         #self.buttons.
 
@@ -546,7 +581,7 @@ class ImageDraw(pg.ImageItem):
         return
 
     def hoverEvent(self, ev):
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        #QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         if self.parent.in_stroke:
             if self.parent.in_stroke:
                 # continue stroke if not at start
@@ -605,7 +640,7 @@ class ImageDraw(pg.ImageItem):
         #print(ev.pressure())
 
     def drawAt(self, pos, ev=None):
-        mask = self.greenmask
+        mask = self.strokemask
         set = self.parent.current_point_set
         stroke = self.parent.current_stroke
         pos = [int(pos.y()), int(pos.x())]
@@ -660,7 +695,7 @@ class ImageDraw(pg.ImageItem):
         offmask = np.zeros((bs,bs,1))
         opamask = 100 * kernel[:,:,np.newaxis]
         self.redmask = np.concatenate((onmask,offmask,offmask,onmask), axis=-1)
-        self.greenmask = np.concatenate((onmask,offmask,onmask,opamask), axis=-1)
+        self.strokemask = np.concatenate((onmask,offmask,onmask,opamask), axis=-1)
 
 
 class RangeSlider(QSlider):
@@ -691,12 +726,12 @@ class RangeSlider(QSlider):
         self.setStyleSheet(\
                 "QSlider::handle:horizontal {\
                 background-color: white;\
-                border: 1px solid #5c5c5c;\
-                border-radius: 0px;\
-                border-color: black;\
+                border: 1px solid white;\
+                border-radius: 2px;\
+                border-color: white;\
                 height: 8px;\
                 width: 6px;\
-                margin: -8px 2; \
+                margin: 0px 2; \
                 }")
 
 
@@ -753,8 +788,8 @@ class RangeSlider(QSlider):
             else:
                 opt.activeSubControls = self.hover_control
 
-            opt.sliderPosition = value
-            opt.sliderValue = value
+            opt.sliderPosition = int(value)
+            opt.sliderValue = int(value)
             style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
 
 
