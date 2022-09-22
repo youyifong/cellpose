@@ -125,7 +125,6 @@ def main():
     training_args.add_argument('--train_seed', default=0, type=int, help='random seed. Default: %(default)s')
     training_args.add_argument('--patch_size', default=448, type=int, help='patch size. Default: %(default)s')
     training_args.add_argument('--no_rotate', action='store_true', help='turn off random rotation')
-    training_args.add_argument('--cuda_id', default=0, type=int, help='cuda gpu id. Default: %(default)s')
     
     # misc settings
     parser.add_argument('--verbose', action='store_true', help='show information about running and settings and save to log')
@@ -344,7 +343,7 @@ def main():
                                            min_train_masks=args.min_train_masks,
                                            train_seed=args.train_seed,
                                            patch_size=args.patch_size,
-                                           cuda_id=args.cuda_id,
+                                           cuda_id=args.gpu_device,
                                            do_rotate=not args.no_rotate)
                 model.pretrained_model = cpmodel_path
                 logger.info('>>>> model trained and saved to %s'%cpmodel_path)
