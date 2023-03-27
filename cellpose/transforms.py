@@ -193,6 +193,14 @@ def normalize99(Y, lower=1,upper=99):
     X = (X - x01) / (x99 - x01)
     return X
 
+def normalize100(Y, lower=0,upper=100):
+    """ normalize image so 0.0 is 0st percentile and 1.0 is 100th percentile """
+    X = Y.copy()
+    x01 = np.percentile(X, lower)
+    x99 = np.percentile(X, upper)
+    X = (X - x01) / (x99 - x01)
+    return X
+
 def move_axis(img, m_axis=-1, first=True):
     """ move axis m_axis to first or last position """
     if m_axis==-1:
@@ -368,7 +376,7 @@ def reshape(data, channels=[0,0], chan_first=False):
             data = np.transpose(data, (2,0,1))
     return data
 
-def normalize_img(img, axis=-1, invert=False):
+def normalize_img(img, axis=-1, invert=False, normalize_100=False):
     """ normalize each channel of the image so that so that 0.0=1st percentile
     and 1.0=99th percentile of image intensities
 
@@ -403,7 +411,10 @@ def normalize_img(img, axis=-1, invert=False):
         #i99 = np.percentile(img[k],99)
         #i1 = np.percentile(img[k],1)
         #if i99 - i1 > +1e-3: #np.ptp(img[k]) > 1e-3:
-            img[k] = normalize99(img[k])
+            if normalize_100: 
+                img[k] = normalize100(img[k])
+            else:
+                img[k] = normalize99(img[k])
             if invert:
                 img[k] = -1*img[k] + 1   
         #else:

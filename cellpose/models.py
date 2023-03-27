@@ -380,7 +380,7 @@ class CellposeModel(UnetModel):
                                                                                  ) 
     
     def eval(self, x, batch_size=8, channels=None, channel_axis=None, 
-             z_axis=None, normalize=True, invert=False, 
+             z_axis=None, normalize=True, normalize_100=False, invert=False, 
              rescale=None, diameter=None, do_3D=False, anisotropy=None, net_avg=False, 
              augment=False, tile=True, tile_overlap=0.1,
              resample=True, interp=True,
@@ -552,6 +552,7 @@ class CellposeModel(UnetModel):
             masks, styles, dP, cellprob, p = self._run_cp(x, 
                                                           compute_masks=compute_masks,
                                                           normalize=normalize,
+                                                          normalize_100=normalize_100,
                                                           invert=invert,
                                                           rescale=rescale, 
                                                           net_avg=net_avg, 
@@ -571,7 +572,7 @@ class CellposeModel(UnetModel):
             flows = [plot.dx_to_circ(dP), dP, cellprob, p]
             return masks, flows, styles
 
-    def _run_cp(self, x, compute_masks=True, normalize=True, invert=False,
+    def _run_cp(self, x, compute_masks=True, normalize=True, normalize_100=False, invert=False,
                 rescale=1.0, net_avg=False, resample=True,
                 augment=False, tile=True, tile_overlap=0.1,
                 cellprob_threshold=0.0, 
@@ -587,7 +588,7 @@ class CellposeModel(UnetModel):
         if do_3D:
             img = np.asarray(x)
             if normalize or invert:
-                img = transforms.normalize_img(img, invert=invert)
+                img = transforms.normalize_img(img, invert=invert, normalize_100=normalize_100)
             yf, styles = self._run_3D(img, rsz=rescale, anisotropy=anisotropy, 
                                       net_avg=net_avg, augment=augment, tile=tile,
                                       tile_overlap=tile_overlap)
@@ -610,7 +611,7 @@ class CellposeModel(UnetModel):
             for i in iterator:
                 img = np.asarray(x[i])
                 if normalize or invert:
-                    img = transforms.normalize_img(img, invert=invert)
+                    img = transforms.normalize_img(img, invert=invert, normalize_100=normalize_100)
                 if rescale != 1.0:
                     img = transforms.resize_image(img, rsz=rescale)
                 yf, style = self._run_nets(img, net_avg=net_avg,
