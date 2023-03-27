@@ -651,6 +651,7 @@ class CellposeModel(UnetModel):
                 for i in iterator:
                     outputs = dynamics.compute_masks(dP[:,i], cellprob[i], niter=niter, cellprob_threshold=cellprob_threshold,
                                                          flow_threshold=flow_threshold, interp=interp, resize=resize,
+                                                         min_size=min_size,
                                                          use_gpu=self.gpu, device=self.device)
                     masks.append(outputs[0])
                     p.append(outputs[1])

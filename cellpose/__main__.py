@@ -69,6 +69,7 @@ def main():
     algorithm_args.add_argument('--diameter', required=False, default=30., type=float, 
                         help='cell diameter, if 0 will use the diameter of the training labels used in the model, or with built-in model will estimate diameter for each image')
     algorithm_args.add_argument('--stitch_threshold', required=False, default=0.0, type=float, help='compute masks in 2D then stitch together masks with IoU>0.9 across planes')
+    algorithm_args.add_argument('--min_size', required=False, default=15, type=int, help='minimum number of pixels per mask, can turn off with -1')
     algorithm_args.add_argument('--fast_mode', action='store_true', help='now equivalent to --no_resample; make code run faster by turning off resampling')
     
     algorithm_args.add_argument('--flow_threshold', default=0.4, type=float, help='flow error threshold, 0 turns off this optional QC step. Default: %(default)s')
@@ -255,6 +256,7 @@ def main():
                                 flow_threshold=args.flow_threshold,
                                 cellprob_threshold=args.cellprob_threshold,
                                 stitch_threshold=args.stitch_threshold,
+                                min_size=args.min_size,
                                 invert=args.invert,
                                 batch_size=args.batch_size,
                                 interp=(not args.no_interp),
