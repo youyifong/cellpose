@@ -103,7 +103,7 @@ class Cellpose():
         self.sz.model_type = model_type
         
     def eval(self, x, batch_size=8, channels=None, channel_axis=None, z_axis=None,
-             invert=False, normalize=True, diameter=30., do_3D=False, anisotropy=None,
+             invert=False, normalize=True, normalize_100=True, diameter=30., do_3D=False, anisotropy=None,
              net_avg=False, augment=False, tile=True, tile_overlap=0.1, resample=True, interp=True,
              flow_threshold=0.4, cellprob_threshold=0.0, min_size=15, stitch_threshold=0.0, 
              rescale=None, progress=None, model_loaded=False):
@@ -240,6 +240,7 @@ class Cellpose():
                                             batch_size=batch_size, 
                                             invert=invert, 
                                             normalize=normalize,
+                                            normalize_100=normalize_100,
                                             diameter=diameter,
                                             rescale=rescale, 
                                             anisotropy=anisotropy, 
@@ -507,6 +508,7 @@ class CellposeModel(UnetModel):
                                                  channel_axis=channel_axis, 
                                                  z_axis=z_axis, 
                                                  normalize=normalize, 
+                                                 normalize_100=normalize_100,
                                                  invert=invert, 
                                                  rescale=rescale[i] if isinstance(rescale, list) or isinstance(rescale, np.ndarray) else rescale,
                                                  diameter=diameter[i] if isinstance(diameter, list) or isinstance(diameter, np.ndarray) else diameter, 
