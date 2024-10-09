@@ -199,6 +199,8 @@ def main():
             raise ValueError('ERROR: cannot train model with single image input')
 
         if not args.train and not args.train_size:
+            # inference
+            
             tic = time.time()
             if len(args.dir) > 0:
                 image_names = io.get_image_files(args.dir, 
@@ -212,10 +214,22 @@ def main():
                     raise ValueError(f'ERROR: no file found at {args.image_path}')
             nimg = len(image_names)
                 
-            cstr0 = ['GRAY', 'RED', 'GREEN', 'BLUE']
-            cstr1 = ['NONE', 'RED', 'GREEN', 'BLUE']
-            logger.info('>>>> running cellpose on %d images using chan_to_seg %s and chan (opt) %s'%
-                            (nimg, cstr0[channels[0]], cstr1[channels[1]]))
+            if args.all_channels:
+                img = io.imread(image_names[0])
+                if img.ndim==3:
+                    nchan = min(img.shape)
+                elif img.ndim==2:
+                    nchan = 1
+                channels = None 
+                logger.info('>>>> running cellpose on %d images using all channels'%
+                                (nimg))
+            else:
+                nchan = 2 
+
+                cstr0 = ['GRAY', 'RED', 'GREEN', 'BLUE']
+                cstr1 = ['NONE', 'RED', 'GREEN', 'BLUE']
+                logger.info('>>>> running cellpose on %d images using chan_to_seg %s and chan (opt) %s'%
+                                (nimg, cstr0[channels[0]], cstr1[channels[1]]))
              
             # handle built-in model exceptions; bacterial ones get no size model 
             if builtin_size:
@@ -229,7 +243,8 @@ def main():
                 model = models.CellposeModel(gpu=gpu, device=device, 
                                              pretrained_model=pretrained_model,
                                              model_type=model_type,
-                                             net_avg=False)
+                                             net_avg=False,
+                                             nchan=nchan)
             
             # handle diameters
             if args.diameter==0:
@@ -249,6 +264,12 @@ def main():
             
             for image_name in tqdm(image_names, file=tqdm_out):
                 image = io.imread(image_name)
+                
+                if args.all_channels:
+                    # if the last dimension is channel, reshape image
+                    if image.shape[2] == min(image.shape):
+                        image = np.transpose(image, (2, 0, 1))
+
                 out = model.eval(image, channels=channels, diameter=diameter,
                                 do_3D=args.do_3D, net_avg=(not args.fast_mode or args.net_avg),
                                 augment=False,
@@ -281,12 +302,12 @@ def main():
                                   save_txt=args.save_txt,in_folders=args.in_folders)
             logger.info('>>>> completed in %0.3f sec'%(time.time()-tic))
         else:
+            # training
             
             test_dir = None if len(args.test_dir)==0 else args.test_dir
             output = io.load_train_test_data(args.dir, test_dir, imf, args.mask_filter, args.unet, args.look_one_level_down)
             images, labels, image_names, test_images, test_labels, image_names_test = output
 
-            # training with all channels
             if args.all_channels:
                 img = images[0]
                 if img.ndim==3:
