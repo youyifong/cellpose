@@ -366,6 +366,7 @@ def reshape(data, channels=[0,0], chan_first=False):
                     if i==0:
                         warnings.warn("chan to seg' has value range of ZERO")
                     else:
+                        print(data.shape)
                         warnings.warn("'chan2 (opt)' has value range of ZERO, can instead set chan2 to 0")
             if data.shape[-1]==1:
                 data = np.concatenate((data, np.zeros_like(data)), axis=-1)

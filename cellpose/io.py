@@ -97,12 +97,7 @@ def imread(filename):
         try:
             img = cv2.imread(filename, -1)#cv2.LOAD_IMAGE_ANYDEPTH)
             if img.ndim > 2:
-                if img.ndim==3:
-                    # if the last dimension is channel, reshape image so that the first dimension is channel
-                    if img.shape[2] == min(img.shape):
-                        img = np.transpose(img, (2, 0, 1))
-
-                # img = img[..., [2,1,0]]
+                img = img[..., [2,1,0]]
             return img
         except Exception as e:
             io_logger.critical('ERROR: could not read file, %s'%e)
